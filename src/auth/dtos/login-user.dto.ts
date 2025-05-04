@@ -6,4 +6,6 @@ export class LoginUserDto{
     email: string
     @IsString({message: 'password should be a string'})
     password: string
+
+    refresh_token: string | null
 }

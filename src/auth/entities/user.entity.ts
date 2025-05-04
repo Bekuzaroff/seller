@@ -24,4 +24,11 @@ export class UserEntity{
         length: 100
     })
     password: string
+
+    @Column({
+        type: 'varchar',
+        length: 300,
+        nullable: true
+    })
+    refresh_token: string | null
 }

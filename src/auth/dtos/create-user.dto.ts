@@ -20,4 +20,6 @@ export class CreateUserDto{
     @IsString()
     @Match('password', {message: 'your passwords do not match'})
     confirm_password: string
+
+    refresh_token: string | null
 }
