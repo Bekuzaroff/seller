@@ -9,6 +9,7 @@ import * as jwt from "jsonwebtoken";
 import { ConfigService } from '@nestjs/config';
 import ms from 'ms';
 import { Request, Response } from 'express';
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -48,8 +49,7 @@ export class AuthService {
         try{
             const new_user = this.repository.create(user);
             
-            const salt_rounds = 10;
-            new_user.password = await this.hash_password(new_user.password, salt_rounds)
+            new_user.password = await this.hash_password(new_user.password, 10)
 
             const access_token = await this.sign_jwt(new_user.user_id, "15m");
             const refresh_token = await this.sign_jwt(new_user.user_id, "15d");
@@ -60,7 +60,7 @@ export class AuthService {
 
             res.cookie('refresh_token', refresh_token, {
                 httpOnly: true,
-                secure: true ? process.env.NODE_ENV === 'production' : false,
+                secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
                 path: '/api/v1/user/refresh',
                 maxAge: 5 * 24 * 60 * 60 * 1000
@@ -86,14 +86,14 @@ export class AuthService {
         }
     }
 
-    async login(user: LoginUserDto, res: Response, req: Request){
+    async login(user: LoginUserDto, req: Request, res: Response){
         try{
             const existing_user = await this.repository.findOne(
                 {where: {
                     email: user.email
                 }}
             )
-    
+
             if(!existing_user){
                 throw new NotFoundException('user with such email does not exist');
             }
@@ -110,7 +110,7 @@ export class AuthService {
 
             res.cookie('refresh_token', refresh_token, {
                 httpOnly: true,
-                secure: true ? process.env.NODE_ENV === 'production' : false,
+                secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
                 path: '/api/v1/user/refresh',
                 maxAge: 5 * 24 * 60 * 60 * 1000
@@ -128,30 +128,15 @@ export class AuthService {
 
     
 
-    async logout(req: Request, res: Response){
-        const refresh_token_cookie = req.cookies['refresh_token'];
+    async logout(req: any, res: Response){
+        const user = req.user
 
-        if(!refresh_token_cookie){
-            throw new HttpException('refresh token is not provided', 404);
-        }
-
-        let payload: any;
-        payload = this.verify_token(refresh_token_cookie);
-
-        const existing_user = await this.repository.findOne({
-            where: {user_id: payload.sub}
-        });
-
-        if(!existing_user){
-            throw new HttpException("such user does not exist", 404);
-        }
-
-        existing_user.refresh_token = null;
-        await this.repository.save(existing_user);
+        user.refresh_token = null;
+        await this.repository.save(user);
 
         res.clearCookie('refresh_token', {
             httpOnly: true,
-            secure: true ? process.env.NODE_ENV === 'production' : false,
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             path: '/api/v1/user/refresh'
         });
@@ -163,7 +148,7 @@ export class AuthService {
 
     }
 
-    async refresh(res: Response, req: Request){
+    async refresh(req: Request, res: Response){
         const refresh_token_cookie = req.cookies['refresh_token'];
 
         if(!refresh_token_cookie){
@@ -193,7 +178,7 @@ export class AuthService {
 
         res.cookie('refresh_token', refresh_token, {
             httpOnly: true,
-            secure: true ? process.env.NODE_ENV === 'production' : false,
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             path: '/api/v1/user/refresh',
             maxAge: 5 * 24 * 60 * 60 * 1000
@@ -202,6 +187,32 @@ export class AuthService {
             status: 'success',
             data: access_token
         });
+    }  
+    async forgot_password(){
+        return;
+    }
+    async change_password(req: any){
+        const user = req.user;
+        
+        if(!(await this.comparePasswordsLogin(req.body.old_password, user.password))){
+            throw new HttpException('wrong old password', 400);
+        }
+
+        if(req.body.new_password !== req.body.confirm_password){
+            throw new HttpException('passwords do not match', 400);
+        }
+
+        user.password = await this.hash_password(req.body.new_password, 10);
+
+        await this.repository.save(user);
+
+        return {
+            status: 'success',
+            data: 'changed password successfully'
+        }
+    }
+    async change_details(){
+        return;
     }
 }
 
