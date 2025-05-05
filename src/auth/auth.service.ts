@@ -60,8 +60,7 @@ export class AuthService {
 
             res.cookie('refresh_token', refresh_token, {
                 httpOnly: true,
-                //пока просто убрал
-                // secure: true,
+                secure: true ? process.env.NODE_ENV === 'production' : false,
                 sameSite: 'strict',
                 path: '/api/v1/user/refresh',
                 maxAge: 5 * 24 * 60 * 60 * 1000
@@ -111,7 +110,7 @@ export class AuthService {
 
             res.cookie('refresh_token', refresh_token, {
                 httpOnly: true,
-                // secure: true,
+                secure: true ? process.env.NODE_ENV === 'production' : false,
                 sameSite: 'strict',
                 path: '/api/v1/user/refresh',
                 maxAge: 5 * 24 * 60 * 60 * 1000
@@ -127,16 +126,20 @@ export class AuthService {
         }
     }
 
+    
+
     async logout(req: Request, res: Response){
-        res.clearCookie('refresh_token', {
-            httpOnly: true,
-            // secure: true,
-            sameSite: 'strict',
-            path: '/api/v1/user/refresh'
-        });
+        const refresh_token_cookie = req.cookies['refresh_token'];
+
+        if(!refresh_token_cookie){
+            throw new HttpException('refresh token is not provided', 404);
+        }
+
+        let payload: any;
+        payload = this.verify_token(refresh_token_cookie);
 
         const existing_user = await this.repository.findOne({
-            where: {user_id: req.body.user_id}
+            where: {user_id: payload.sub}
         });
 
         if(!existing_user){
@@ -145,6 +148,13 @@ export class AuthService {
 
         existing_user.refresh_token = null;
         await this.repository.save(existing_user);
+
+        res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: true ? process.env.NODE_ENV === 'production' : false,
+            sameSite: 'strict',
+            path: '/api/v1/user/refresh'
+        });
 
         res.json({
             status: 'success',
@@ -159,7 +169,7 @@ export class AuthService {
         if(!refresh_token_cookie){
             throw new HttpException("no token in cookie", 404);
         }
-
+        
         let payload: any;
         payload = this.verify_token(refresh_token_cookie);
 
@@ -183,7 +193,7 @@ export class AuthService {
 
         res.cookie('refresh_token', refresh_token, {
             httpOnly: true,
-            // secure: true,
+            secure: true ? process.env.NODE_ENV === 'production' : false,
             sameSite: 'strict',
             path: '/api/v1/user/refresh',
             maxAge: 5 * 24 * 60 * 60 * 1000
