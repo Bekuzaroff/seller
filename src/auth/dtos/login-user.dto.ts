@@ -1,11 +1,6 @@
-import { IsEmail, IsString } from "class-validator"
+import { PartialType } from "@nestjs/mapped-types"
+import { CreateUserDto } from "./create-user.dto"
 
-export class LoginUserDto{
-    @IsString({message: 'email should be a string'})
-    @IsEmail({}, {message: 'wrong email format'})
-    email: string
-    @IsString({message: 'password should be a string'})
-    password: string
-
-    refresh_token: string | null
+export class LoginUserDto extends PartialType(CreateUserDto){
+    
 }

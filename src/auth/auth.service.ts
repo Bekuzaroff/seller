@@ -9,6 +9,7 @@ import * as jwt from "jsonwebtoken";
 import { ConfigService } from '@nestjs/config';
 import ms from 'ms';
 import { Request, Response } from 'express';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -98,7 +99,7 @@ export class AuthService {
                 throw new NotFoundException('user with such email does not exist');
             }
 
-            if(!(await this.comparePasswordsLogin(user.password, existing_user.password))){
+            if(!(await this.comparePasswordsLogin(user.password!, existing_user.password))){
                 throw new BadRequestException('wrong password');
             }
 
@@ -191,18 +192,14 @@ export class AuthService {
     async forgot_password(){
         return;
     }
-    async change_password(req: any){
+    async change_password(req: any, updateUserDto: UpdateUserDto){
         const user = req.user;
         
-        if(!(await this.comparePasswordsLogin(req.body.old_password, user.password))){
+        if(!(await this.comparePasswordsLogin(updateUserDto.old_password, user.password))){
             throw new HttpException('wrong old password', 400);
         }
 
-        if(req.body.new_password !== req.body.confirm_password){
-            throw new HttpException('passwords do not match', 400);
-        }
-
-        user.password = await this.hash_password(req.body.new_password, 10);
+        user.password = await this.hash_password(updateUserDto.password, 10);
 
         await this.repository.save(user);
 
@@ -211,8 +208,30 @@ export class AuthService {
             data: 'changed password successfully'
         }
     }
-    async change_details(){
-        return;
+
+    async change_details(req: any, updateUserDto: UpdateUserDto){
+        try{
+            if(updateUserDto.password){
+                throw new HttpException('you should update your password separatly', 400);
+            }
+            
+            await this.repository.update({user_id: req.user.user_id}, updateUserDto);
+    
+            req.user = await this.repository.findOne({
+                where:{
+                    user_id: req.user.user_id
+                }
+            });
+    
+            return {
+                status: 'success',
+                data: 'changed details successfully'
+            }
+        }catch(err){
+            if(err.code === '23505'){
+                throw new HttpException('user with such field already exists', 400);
+            }
+        }
     }
 }
 
