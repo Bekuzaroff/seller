@@ -1,4 +1,4 @@
-import { IsEmail, isString, IsString, Min, MinLength } from "class-validator"
+import { IsEmail, IsString, MinLength } from "class-validator"
 import { Match } from "src/decorators/match-decorator"
 
 
