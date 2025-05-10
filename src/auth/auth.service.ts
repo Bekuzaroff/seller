@@ -10,6 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import ms from 'ms';
 import { Request, Response } from 'express';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import * as nodemailer from 'nodemailer';
+import { ResetPasswordDto } from './dtos/reset-pass.dto';
 
 @Injectable()
 export class AuthService {
@@ -189,9 +191,77 @@ export class AuthService {
             data: access_token
         });
     }  
-    async forgot_password(){
-        return;
+    async forgot_password(updateUserDto: UpdateUserDto){
+        const email = updateUserDto.email;
+        if(!email){
+            throw new HttpException('please, provide your email', 400);
+        }
+
+        const user = await this.repository.findOne({
+            where: {email}
+        });
+
+        if(!user){
+            throw new HttpException('user with such email does not exist', 404);
+        }
+        const token = await this.sign_jwt(user.user_id, "5m");
+        const reset_link = `${this.configService.get<string>('CLIENT_URL')}/api/v1/user/reset_password?token=${token}`;
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: this.configService.get<string>('USER_EMAIL'),
+                pass: this.configService.get<string>('USER_PASSWORD')
+            }
+        });
+
+        const mailOptions = {
+            from: this.configService.get<string>('USER_EMAIL'),
+            to: user.email,
+            subject: 'Reset password',
+            html: `<p> press this link: <a href="${reset_link}" </a> to reset your password.</p>`
+        }
+
+        try{
+            await transporter.sendMail(mailOptions);
+            return {
+                status: 'success',
+                data: 'we have sent letter to reset password to your email'
+            }
+        }catch(err){
+            throw err;
+        }
     }
+
+    async reset_password(token: string, resetPasswordDto: ResetPasswordDto){
+        try{
+            const new_password_hashed = await this.hash_password(resetPasswordDto.new_password, 10);
+
+        let decoded_token: any
+        decoded_token = this.verify_token(token);
+
+        const user = await this.repository.findOne({
+            where: {
+                user_id: decoded_token.sub
+            }
+        });
+
+        if(!user){
+            throw new HttpException('user with such email does not exist', 404);
+        }
+
+        await this.repository.update({user_id: user.user_id}, {password: new_password_hashed});
+
+        return {
+            status: 'success',
+            data: 'reset password successfully, you can now login with your new password'
+        };
+        
+        }catch(err){
+            throw err;
+        }
+    }
+
     async change_password(req: any, updateUserDto: UpdateUserDto){
         const user = req.user;
         

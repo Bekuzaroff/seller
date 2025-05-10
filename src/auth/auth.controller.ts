@@ -1,10 +1,11 @@
-import {Body, Controller, HttpCode, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {Body, Controller, HttpCode, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dtos/login-user.dto';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { ResetPasswordDto } from './dtos/reset-pass.dto';
 
 @Controller('/api/v1/user/')
 export class AuthController {
@@ -47,6 +48,16 @@ export class AuthController {
     @Patch('change_details')
     change_details(@Req() req: any, @Body() updateUserDto: UpdateUserDto){
         return this.service.change_details(req, updateUserDto);
+    }
+
+    @Post('forgot_password')
+    forgot_password(@Body() updateUserDto: UpdateUserDto){
+        return this.service.forgot_password(updateUserDto);
+    }
+
+    @Post('reset_password')
+    reset_password(@Query('token') token: string, @Body() resetPasswordDto: ResetPasswordDto){
+        return this.service.reset_password(token, resetPasswordDto);
     }
 }
 
