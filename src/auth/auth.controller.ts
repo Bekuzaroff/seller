@@ -19,8 +19,8 @@ export class AuthController {
 
     @HttpCode(200)
     @Post('login')
-    login(@Body() user: LoginUserDto, @Req() req: Request, @Res() res: Response){
-        return this.service.login(user, req, res);
+    login(@Body() user: LoginUserDto, @Res() res: Response){
+        return this.service.login(user, res);
     }
 
     @UseGuards(JwtAuthGuard)
