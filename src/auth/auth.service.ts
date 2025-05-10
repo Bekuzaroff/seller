@@ -89,7 +89,7 @@ export class AuthService {
         }
     }
 
-    async login(user: LoginUserDto, req: Request, res: Response){
+    async login(user: LoginUserDto, res: Response){
         try{
             const existing_user = await this.repository.findOne(
                 {where: {
