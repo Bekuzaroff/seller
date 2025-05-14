@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsNumber, IsString, MinLength } from "class-validator";
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 
 export class CreateProductDto {
     @IsString({message: 'name should be a string'})
@@ -16,6 +16,7 @@ export class CreateProductDto {
     images: string[]
 
     @IsBoolean({message: 'is_new should be boolean'})
+    @IsOptional()
     is_new: boolean
 
     @IsNumber({}, {message: 'user_id should be a number'})
