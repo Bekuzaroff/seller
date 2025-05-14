@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { UserEntity } from "src/auth/entities/user.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("products")
 export class Product {
@@ -18,13 +19,14 @@ export class Product {
     description: string
 
     @Column({
-        type: 'number'
+        type: 'int'
     })
     price: number
 
     @Column({
-        type: 'array',
+        type: 'varchar',
         length: 10,
+        array: true
     })
     images: string[]
 
@@ -34,12 +36,6 @@ export class Product {
     })
     is_new: boolean
 
-    @Column({
-        type: 'number'
-    })
-    user_id: number
-    
-
-    
-    
+    @ManyToOne(() => UserEntity, (user) => user.products)
+    user: UserEntity
 }

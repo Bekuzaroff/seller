@@ -19,7 +19,4 @@ export class CreateProductDto {
     @IsOptional()
     is_new: boolean
 
-    @IsNumber({}, {message: 'user_id should be a number'})
-    user_id: number
-
 }
