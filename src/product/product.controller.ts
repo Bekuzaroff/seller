@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, HttpCode } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -10,11 +10,12 @@ export class ProductController {
 
   @Post('create')
   @UseGuards(JwtAuthGuard)
+  @HttpCode(201)
   create(@Req() req: any, @Body() createProductDto: CreateProductDto) {
     return this.productService.create(req, createProductDto);
   }
 
-  @Get()
+  @Get('get')
   findAll() {
     return this.productService.findAll();
   }

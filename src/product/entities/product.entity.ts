@@ -1,5 +1,5 @@
 import { UserEntity } from "src/auth/entities/user.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("products")
 export class Product {
@@ -37,5 +37,6 @@ export class Product {
     is_new: boolean
 
     @ManyToOne(() => UserEntity, (user) => user.products)
-    user_id: number
+    @JoinColumn({name: 'user_id'})
+    user: UserEntity
 }

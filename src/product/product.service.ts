@@ -31,8 +31,17 @@ export class ProductService {
     }
   }
 
-  findAll() {
-    
+  async findAll() {
+    try{
+      const products = await this.repository.find({relations: ['user']});
+
+      return {
+        status: 'success',
+        data: products
+      }
+    }catch(err){
+      throw err;
+    }
   }
 
   findOne(id: number) {

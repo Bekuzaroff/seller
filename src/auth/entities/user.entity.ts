@@ -33,6 +33,6 @@ export class UserEntity{
     })
     refresh_token: string | null
 
-    @OneToMany(() => Product, (product) => product.user_id)
+    @OneToMany(() => Product, (product) => product.user)
     products: Product[]
 }
