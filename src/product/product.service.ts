@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Repository } from 'typeorm';
@@ -44,8 +44,23 @@ export class ProductService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: number) {
+    try{
+      const product = await this.repository.findOne({ relations: ['user'], 
+      where: {product_id: id}
+      });
+
+      if(!product){
+        throw new HttpException('no product with such id', 404);
+      }
+
+      return {
+        status: 'success',
+        data: product
+      }
+    }catch(err){
+      throw err;
+    }
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {
