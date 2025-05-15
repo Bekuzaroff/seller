@@ -8,7 +8,7 @@ export class Product {
 
     @Column({
         type: 'varchar',
-        length: 30,
+        length: 30
     })
     name: string
 
@@ -37,5 +37,5 @@ export class Product {
     is_new: boolean
 
     @ManyToOne(() => UserEntity, (user) => user.products)
-    user: UserEntity
+    user_id: number
 }

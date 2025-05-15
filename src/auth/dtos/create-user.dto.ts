@@ -1,6 +1,5 @@
-import { IsArray, IsEmail, IsString, MinLength } from "class-validator"
+import { IsEmail, IsString, MinLength } from "class-validator"
 import { Match } from "./../decorators/match-decorator"
-import { Product } from "src/product/entities/product.entity"
 
 
 export class CreateUserDto{
