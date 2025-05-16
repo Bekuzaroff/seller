@@ -33,9 +33,19 @@ export class ProductService {
     }
   }
 
-  async findAll() {
+  async findAll(q: any) {
     try{
-      const products = await this.repository.find({relations: ['user']});
+      let products = await this.repository.find({relations: ['user']});
+
+      if(q.name){
+        products = products.filter(v => v.name.includes(q.name));
+      }
+      if(q.description){
+        products = products.filter(v => v.description.includes(q.description));
+      }
+      if(q.is_new){
+        products = products.filter(v => v.is_new === q.is_new);
+      }
 
       return {
         status: 'success',
