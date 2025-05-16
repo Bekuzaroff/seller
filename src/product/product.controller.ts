@@ -8,14 +8,14 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  @Post('create')
+  @Post('')
   @UseGuards(JwtAuthGuard)
   @HttpCode(201)
   create(@Req() req: any, @Body() createProductDto: CreateProductDto) {
     return this.productService.create(req, createProductDto);
   }
 
-  @Get('get')
+  @Get('')
   findAll() {
     return this.productService.findAll();
   }
@@ -26,11 +26,13 @@ export class ProductController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(+id, updateProductDto);
+  @UseGuards(JwtAuthGuard)
+  update(@Req() req: any, @Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    return this.productService.update(+id, updateProductDto, req);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
     return this.productService.remove(+id);
   }

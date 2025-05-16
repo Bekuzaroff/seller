@@ -18,10 +18,12 @@ export class ProductService {
     try{
       let product: any;
 
-      product = {...createProductDto, user_id: req.user.user_id}
+      product = {...createProductDto, user: req.user}
+      console.log(product)
       product = this.repository.create(product)
 
       await this.repository.save(product);
+      
       return {
         status: 'success',
         data: 'product created successfully'
@@ -63,8 +65,34 @@ export class ProductService {
     }
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto, req: any) {
+    try{
+      if(!id){
+        throw new HttpException('no id provided', 400);
+      }
+
+      const product = await this.repository.findOne({
+        relations: ['user'],
+        where: {product_id: id}
+      });
+      
+      if(!product){
+        throw new HttpException('no product with such id', 404);
+      }
+
+      if(product.user.user_id !== req.user.user_id){
+        throw new HttpException('can only modify your products', 400);
+      }
+      
+      await this.repository.update({product_id: id}, updateProductDto)
+
+      return {
+        status: 'success',
+        data: 'updated successfully'
+      }
+    }catch(err){
+      throw err;
+    }
   }
 
   remove(id: number) {
