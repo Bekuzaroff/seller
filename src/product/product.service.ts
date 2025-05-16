@@ -95,7 +95,34 @@ export class ProductService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(req: any, id: number) {
+    try{
+      console.log(req.user)
+      if(!id){
+        throw new HttpException('id is not provided', 400);
+      }
+
+      const product = await this.repository.findOne({
+        where: {product_id: id},
+        relations: ['user']
+      });
+
+      if(!product){
+        throw new HttpException('no product with such id', 404);
+      }
+
+      if(product.user.user_id !== req.user.user_id){
+        throw new HttpException('can only delete your products', 400);
+      }
+
+      await this.repository.delete({product_id: id});
+
+      return {
+        status: 'success',
+        data: product
+      }
+    }catch(err){
+      throw err;
+    }
   }
 }
