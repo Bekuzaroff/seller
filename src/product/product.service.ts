@@ -4,13 +4,16 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserEntity } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductService {
 
   constructor(
     @InjectRepository(Product)
-    private readonly repository: Repository<Product>){
+    private readonly repository: Repository<Product>,
+    @InjectRepository(UserEntity)
+    private readonly user_repository: Repository<UserEntity>){
 
     }
 
@@ -133,7 +136,6 @@ export class ProductService {
 
   async remove(req: any, id: number) {
     try{
-      console.log(req.user)
       if(!id){
         throw new HttpException('id is not provided', 400);
       }
@@ -161,4 +163,48 @@ export class ProductService {
       throw err;
     }
   }
+
+  async likeProduct(req: any, id: number){
+    try{
+      const product = await this.repository.findOne({where: {product_id: id}, relations: ['users_liked', 'user']});
+
+      if(!product){
+        throw new HttpException('product not found', 404);
+      }
+
+      if(product.user.user_id === req.user.user_id){
+        return {};
+      }
+      
+      req.user.liked_products.push(product);
+      await this.user_repository.save(req.user);
+
+      return {
+        status: 'success',
+        data: product
+      }
+    }catch(err){
+      throw err;
+    }
+  }
+
+  async get_user_liked_products(req: any){
+    try{
+      const user = await this.user_repository.findOne({where: {user_id: req.user.user_id}, 
+      relations: ['liked_products']});
+
+      if(!user){
+        throw new HttpException('user not found', 404)
+      }
+
+      return {status: 'success', data: user.liked_products}
+
+    }catch(err){
+    throw err;
+  }
+  }
+
+  
+
+
 }

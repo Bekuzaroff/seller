@@ -30,6 +30,18 @@ export class ProductController {
     return this.productService.findProductsByUser(+id);
   }
 
+  @Get('me/liked')
+  @UseGuards(JwtAuthGuard)
+  get_user_liked_products(@Req() req: any){
+    return this.productService.get_user_liked_products(req);
+  }
+
+  @Post('me/liked/:id')
+  @UseGuards(JwtAuthGuard)
+  like_product(@Req() req: any, @Param('id') id: string){
+    return this.productService.likeProduct(req, +id)
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   update(@Req() req: any, @Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {

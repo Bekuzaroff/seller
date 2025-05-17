@@ -25,7 +25,8 @@ export class JwtAuthGuard implements CanActivate{
         user = await this.repository.findOne({
             where: {
                 user_id: payload.sub
-            }
+            },
+            relations: ['liked_products']
         });
 
         if(!user){

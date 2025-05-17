@@ -1,5 +1,5 @@
 import { Product } from "src/product/entities/product.entity"
-import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity("users")
 export class UserEntity{
@@ -37,5 +37,6 @@ export class UserEntity{
     products: Product[]
 
     @ManyToMany(() => Product, (product) => product.users_liked)
+    @JoinTable({name: "liked_products"})
     liked_products: Product[]
 }
