@@ -4,7 +4,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-@Controller('/api/v1/product/')
+@Controller('/api/v1/products/')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
@@ -25,6 +25,18 @@ export class ProductController {
     return this.productService.findOne(+id);
   }
 
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  updateProduct(@Req() req: any, @Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    return this.productService.updateProduct(+id, updateProductDto, req);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  removeProduct(@Req() req: any, @Param('id') id: string) {
+    return this.productService.removeProduct(req, +id);
+  }
+
   @Get('user/:id')
   findProductsByUser(@Param('id') id: string){
     return this.productService.findProductsByUser(+id);
@@ -41,21 +53,10 @@ export class ProductController {
   like_product(@Req() req: any, @Param('id') id: string){
     return this.productService.likeProduct(req, +id)
   }
+
   @Delete('me/liked/:id')
   @UseGuards(JwtAuthGuard)
   delete_user_liked_product(@Req() req: any, @Param('id') id: string){
     return this.productService.delete_user_liked_product(req, +id);
-  }
-
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  update(@Req() req: any, @Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(+id, updateProductDto, req);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  remove(@Req() req: any, @Param('id') id: string) {
-    return this.productService.remove(req, +id);
   }
 }

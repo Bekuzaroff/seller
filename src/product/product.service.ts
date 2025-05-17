@@ -104,7 +104,7 @@ export class ProductService {
     }
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto, req: any) {
+  async updateProduct(id: number, updateProductDto: UpdateProductDto, req: any) {
     try{
       if(!id){
         throw new HttpException('no id provided', 400);
@@ -134,7 +134,7 @@ export class ProductService {
     }
   }
 
-  async remove(req: any, id: number) {
+  async removeProduct(req: any, id: number) {
     try{
       if(!id){
         throw new HttpException('id is not provided', 400);
