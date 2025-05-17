@@ -1,5 +1,5 @@
 import { UserEntity } from "src/auth/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("products")
 export class Product {
@@ -39,4 +39,7 @@ export class Product {
     @ManyToOne(() => UserEntity, (user) => user.products)
     @JoinColumn({name: 'user_id'})
     user: UserEntity
+
+    @CreateDateColumn()
+    created_at: Date
 }

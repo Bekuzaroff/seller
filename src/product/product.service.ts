@@ -19,7 +19,6 @@ export class ProductService {
       let product: any;
 
       product = {...createProductDto, user: req.user}
-      console.log(product)
       product = this.repository.create(product)
 
       await this.repository.save(product);
@@ -35,7 +34,7 @@ export class ProductService {
 
   async findAll(q: any) {
     try{
-      let products = await this.repository.find({relations: ['user']});
+      let products = await this.repository.find({relations: ['user'], order: {created_at: 'DESC'}});
 
       if(q.name){
         products = products.filter(v => v.name.includes(q.name));
