@@ -46,6 +46,12 @@ export class ProductService {
       if(q.is_new){
         products = products.filter(v => v.is_new === q.is_new);
       }
+      if(q.start_price){
+        products = products.filter(v => v.price >= q.start_price);
+      }
+      if(q.end_price){
+        products = products.filter(v => v.price <= q.end_price);
+      }
 
       return {
         status: 'success',
