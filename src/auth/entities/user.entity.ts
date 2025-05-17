@@ -1,5 +1,5 @@
 import { Product } from "src/product/entities/product.entity"
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity("users")
 export class UserEntity{
@@ -35,4 +35,7 @@ export class UserEntity{
 
     @OneToMany(() => Product, (product) => product.user)
     products: Product[]
+
+    @ManyToMany(() => Product, (product) => product.users_liked)
+    liked_products: Product[]
 }

@@ -25,6 +25,11 @@ export class ProductController {
     return this.productService.findOne(+id);
   }
 
+  @Get('user/:id')
+  findProductsByUser(@Param('id') id: string){
+    return this.productService.findProductsByUser(+id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   update(@Req() req: any, @Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {

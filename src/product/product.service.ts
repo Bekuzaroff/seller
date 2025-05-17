@@ -18,7 +18,7 @@ export class ProductService {
     try{
       let product: any;
 
-      product = {...createProductDto, user: req.user}
+      product = {...createProductDto, user: req.user} 
       product = this.repository.create(product)
 
       await this.repository.save(product);
@@ -56,6 +56,27 @@ export class ProductService {
         status: 'success',
         data: products
       }
+    }catch(err){
+      throw err;
+    }
+  }
+  async findProductsByUser(id: number){
+    try{
+      const users_products = await this.repository.find({
+        where: {user: {user_id: id}}
+      });
+
+      if(users_products.length === 0){
+        return {
+          status: 'success',
+          data: 'user does not have any products yet'
+        }
+      }
+
+      return {
+          status: 'success',
+          data: users_products
+        }
     }catch(err){
       throw err;
     }
