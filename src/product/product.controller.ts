@@ -41,6 +41,11 @@ export class ProductController {
   like_product(@Req() req: any, @Param('id') id: string){
     return this.productService.likeProduct(req, +id)
   }
+  @Delete('me/liked/:id')
+  @UseGuards(JwtAuthGuard)
+  delete_user_liked_product(@Req() req: any, @Param('id') id: string){
+    return this.productService.delete_user_liked_product(req, +id);
+  }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)

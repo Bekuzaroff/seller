@@ -204,6 +204,32 @@ export class ProductService {
   }
   }
 
+  async delete_user_liked_product(req: any, id: number){
+    try{
+      const product = await this.repository.findOne({where: {product_id: id}, relations: ['users_liked']});
+
+      if(!product){
+        throw new HttpException('product not found', 404);
+      }
+
+      const likes = req.user.liked_products
+      
+      for(let i = 0; i < likes.length; i++){
+        if(likes[i].product_id == id){
+          likes.splice(i, 1);
+        }
+      };
+      await this.user_repository.save(req.user);
+
+      return {
+        status: 'success',
+        data: product
+      }
+    }catch(err){
+      throw err;
+    }
+  }
+
   
 
 
