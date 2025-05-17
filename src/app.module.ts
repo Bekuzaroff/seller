@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { ProductModule } from './product/product.module';
+import { ChatModule } from './chat/chat.module';
+
 
 @Module({
   imports: [AuthModule, ConfigModule.forRoot({
@@ -22,7 +24,7 @@ import { ProductModule } from './product/product.module';
       synchronize: true,
       autoLoadEntities: true
     })
-  }), ProductModule],
+  }), ProductModule, ChatModule],
   controllers: [AppController],
   providers: [AppService],
 })
