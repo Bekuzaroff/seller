@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
+import { ChatDto } from './dto/chat.dto';
 
 @Injectable()
 export class ChatService {
-  create(createChatDto: CreateChatDto) {
+  create(createChatDto: ChatDto) {
     return 'This action adds a new chat';
   }
 
@@ -14,10 +13,6 @@ export class ChatService {
 
   findOne(id: number) {
     return `This action returns a #${id} chat`;
-  }
-
-  update(id: number, updateChatDto: UpdateChatDto) {
-    return `This action updates a #${id} chat`;
   }
 
   remove(id: number) {
