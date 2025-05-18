@@ -1,6 +1,8 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { ChatService } from './chat.service';
-import { ChatDto } from './dto/chat.dto';
+import { MessageDto } from './dto/message.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @WebSocketGateway({
   cors: {
@@ -18,8 +20,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect{
   }
 
   @SubscribeMessage('writeToChat')
-  create(@MessageBody() createChatDto: ChatDto) {
-    return this.chatService.create(createChatDto);
+  create(@MessageBody() message: MessageDto) {
+    return this.chatService.create(message);
   }
 
   @SubscribeMessage('findAllChats')
