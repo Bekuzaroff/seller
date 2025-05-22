@@ -1,55 +1,64 @@
 import { Injectable } from '@nestjs/common';
-import { MessageDto } from './dto/message.dto';
-import { Repository } from 'typeorm';
-import { Message } from './entities/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Message } from './entities/message.entity';
 import { Chat } from './entities/chat.entity';
+import { Repository } from 'typeorm';
+import { MessageDto } from './dto/message.dto';
 
 @Injectable()
 export class ChatService {
-
   constructor(
     @InjectRepository(Message)
-    private readonly repository: Repository<Message>,
-
+    private readonly messageRepo: Repository<Message>,
     @InjectRepository(Chat)
-    private readonly chat_repository: Repository<Chat>
-  ){}
-  async create(message: MessageDto) {
-  // Сортируем ID, чтобы не было дублей чатов (1-2 и 2-1)
-  const [user1_id, user2_id] = [message.sender_id, message.receiver_id].sort((a, b) => a - b);
+    private readonly chatRepo: Repository<Chat>,
+  ) {}
 
-  // Проверяем, существует ли чат между этими двумя
-  let chat = await this.chat_repository.findOne({
-    where: { user1_id, user2_id },
-  });
+  async create(messageDto: MessageDto) {
+    const [user1_id, user2_id] = [messageDto.sender_id, messageDto.receiver_id].sort((a, b) => a - b);
 
-  // Если нет — создаём
-  if (!chat) {
-    chat = this.chat_repository.create({ user1_id, user2_id });
-    await this.chat_repository.save(chat);
+    // Ищем чат
+    let chat = await this.chatRepo.findOne({
+      where: { user1_id, user2_id },
+    });
+
+    // Создаём чат, если нет
+    if (!chat) {
+      chat = this.chatRepo.create({ user1_id, user2_id });
+      await this.chatRepo.save(chat);
+    }
+
+    // Сохраняем сообщение
+    const message = this.messageRepo.create({
+      ...messageDto,
+      chat,
+    });
+
+    return await this.messageRepo.save(message);
   }
 
-  // Создаём сообщение
-  const msg = this.repository.create({
-    message: message.message,
-    sender_id: message.sender_id,
-    receiver_id: message.receiver_id,
-    chat,
-  });
-
-  await this.repository.save(msg);
-}
-
-  findAll() {
-    return `This action returns all chat`;
+  async findMessagesByChatId(chatId: number) {
+    return this.messageRepo.find({
+      where: { chat: { chat_id: chatId } },
+      order: { sent_at: 'ASC' },
+      relations: ['chat'],
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} chat`;
+  async findAllChatsForUser(userId: number) {
+    return this.chatRepo.find({
+      where: [
+        { user1_id: userId },
+        { user2_id: userId },
+      ],
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} chat`;
+  async findOne(id: number) {
+    return await this.chatRepo.findOne({ where: { chat_id: id } });
+  }
+
+  async remove(id: number) {
+    return await this.chatRepo.delete(id);
   }
 }

@@ -1,41 +1,65 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  SubscribeMessage,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  WebSocketServer,
+  ConnectedSocket,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { MessageDto } from './dto/message.dto';
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @WebSocketGateway({
   cors: {
-    origin: '*'
-  }
+    origin: '*',
+  },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect{
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  server: Server;
+
   constructor(private readonly chatService: ChatService) {}
 
-  handleDisconnect(client: any) {
-    console.log('client is disconnected')
+  handleConnection(client: Socket) {
+    console.log('Client connected:', client.id);
   }
-  handleConnection(client: any, ...args: any[]) {
-    console.log('client is connected')
+
+  handleDisconnect(client: Socket) {
+    console.log('Client disconnected:', client.id);
+  }
+
+  @SubscribeMessage('joinRoom')
+  async handleJoinRoom(
+    @MessageBody() chatId: number,
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(`chat_${chatId}`);
+    console.log(`Client ${client.id} joined room chat_${chatId}`);
   }
 
   @SubscribeMessage('writeToChat')
-  create(@MessageBody() message: MessageDto) {
-    return this.chatService.create(message);
+  async handleMessage(
+    @MessageBody() message: MessageDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const savedMessage = await this.chatService.create(message);
+
+    // Используем chat.id из сохранённого сообщения
+    const roomName = `chat_${savedMessage.chat.chat_id}`;
+
+    // Шлём только участникам чата
+    this.server.to(roomName).emit('newMessage', savedMessage);
   }
 
-  @SubscribeMessage('findAllChats')
-  findAll() {
-    return this.chatService.findAll();
+  @SubscribeMessage('getMessages')
+  async handleGetMessages(@MessageBody() chatId: number) {
+    return await this.chatService.findMessagesByChatId(chatId);
   }
 
-  @SubscribeMessage('findOneChat')
-  findOne(@MessageBody() id: number) {
-    return this.chatService.findOne(id);
-  }
-
-  @SubscribeMessage('removeChat')
-  remove(@MessageBody() id: number) {
-    return this.chatService.remove(id);
+  @SubscribeMessage('getChats')
+  async handleGetChats(@MessageBody() userId: number) {
+    return await this.chatService.findAllChatsForUser(userId);
   }
 }
