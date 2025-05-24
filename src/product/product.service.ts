@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/auth/entities/user.entity';
+import Red from '../redis/red';
 
 @Injectable()
 export class ProductService {
@@ -14,17 +15,23 @@ export class ProductService {
     private readonly repository: Repository<Product>,
     @InjectRepository(UserEntity)
     private readonly user_repository: Repository<UserEntity>){
-
+      
     }
+  
 
-  async create(req: any, createProductDto: CreateProductDto) {
+    async create(req: any, createProductDto: CreateProductDto) {
     try{
+      const redis = Red.getInstance();
       let product: any;
 
-      product = {...createProductDto, user: req.user} 
-      product = this.repository.create(product)
+      product = {...createProductDto, user: req.user};
+      product = this.repository.create(product);
 
-      await this.repository.save(product);
+      const saved_product = await this.repository.save(product);
+      const redis_key = `user_id:${req.user.user_id}:product_id:${saved_product.product_id}`;
+
+      await redis.set(redis_key, JSON.stringify(saved_product)); 
+      await redis.rpush(`user_id:${req.user.user_id}:product_keys`, redis_key);
       
       return {
         status: 'success',
@@ -35,9 +42,28 @@ export class ProductService {
     }
   }
 
-  async findAll(q: any) {
+    async findAll(q: any) {
     try{
-      let products = await this.repository.find({relations: ['user'], order: {created_at: 'DESC'}});
+      // we create instance in another 
+      // file with singleton pattern so the instance will be only one
+
+      // caching logic ------
+      const redis = Red.getInstance();
+
+      let products: Product[];
+
+      const keys = await redis.lrange('all_product_keys', 0, -1);
+
+      if(keys.length > 0){
+        const values = await redis.mget(...keys);
+        products = values.map(v => JSON.parse(v!));
+
+        return products;
+      }
+      // --------------
+
+      //db logic ------
+      products = await this.repository.find({relations: ['user'], order: {created_at: 'DESC'}});
 
       if(q.name){
         products = products.filter(v => v.name.includes(q.name));
@@ -55,6 +81,14 @@ export class ProductService {
         products = products.filter(v => v.price <= q.end_price);
       }
 
+      products.forEach( async(v) => {
+        const product_key = `all_product_keys:${v.product_id}`;
+
+        await redis.set(product_key, JSON.stringify(v));
+        await redis.rpush('all_product_keys', product_key);
+      })
+      
+
       return {
         status: 'success',
         data: products
@@ -63,9 +97,21 @@ export class ProductService {
       throw err;
     }
   }
-  async findProductsByUser(id: number){
+    async findProductsByUser(id: number){
     try{
-      const users_products = await this.repository.find({
+      const redis = Red.getInstance();
+      let users_products: Product[];
+
+      const keys = await redis.lrange(`user_id:${id}:product_keys`, 0, -1);
+
+      if(keys.length > 0){
+        const values = await redis.mget(...keys);
+        users_products = values.map(v => JSON.parse(v!));
+        
+        return users_products;
+      }
+
+      users_products = await this.repository.find({
         where: {user: {user_id: id}}
       });
 
@@ -85,9 +131,24 @@ export class ProductService {
     }
   }
 
-  async findOne(id: number) {
+    async findOne(id: number) {
     try{
-      const product = await this.repository.findOne({ relations: ['user'], 
+      const redis = Red.getInstance();
+      let product: Product | null
+
+      const keys = await redis.lrange('all_product_keys', 0, -1);
+
+      if(keys.length > 0){
+        const key = keys.find(v => v === `all_product_keys:${id}`);
+        if(!key){
+          throw new HttpException('no such product', 404);
+        }
+
+        const value = await redis.get(key);
+        product = JSON.parse(value!);
+      }
+
+      product = await this.repository.findOne({ relations: ['user'], 
       where: {product_id: id}
       });
 
@@ -104,7 +165,7 @@ export class ProductService {
     }
   }
 
-  async updateProduct(id: number, updateProductDto: UpdateProductDto, req: any) {
+    async updateProduct(id: number, updateProductDto: UpdateProductDto, req: any) {
     try{
       if(!id){
         throw new HttpException('no id provided', 400);
@@ -134,7 +195,7 @@ export class ProductService {
     }
   }
 
-  async removeProduct(req: any, id: number) {
+    async removeProduct(req: any, id: number) {
     try{
       if(!id){
         throw new HttpException('id is not provided', 400);
@@ -164,7 +225,7 @@ export class ProductService {
     }
   }
 
-  async likeProduct(req: any, id: number){
+    async likeProduct(req: any, id: number){
     try{
       const product = await this.repository.findOne({where: {product_id: id}, relations: ['users_liked', 'user']});
 
@@ -188,7 +249,7 @@ export class ProductService {
     }
   }
 
-  async get_user_liked_products(req: any){
+    async get_user_liked_products(req: any){
     try{
       const user = await this.user_repository.findOne({where: {user_id: req.user.user_id}, 
       relations: ['liked_products']});
@@ -204,7 +265,7 @@ export class ProductService {
   }
   }
 
-  async delete_user_liked_product(req: any, id: number){
+    async delete_user_liked_product(req: any, id: number){
     try{
       const product = await this.repository.findOne({where: {product_id: id}, relations: ['users_liked']});
 
