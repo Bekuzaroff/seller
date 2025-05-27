@@ -21,17 +21,12 @@ export class ProductService {
 
     async create(req: any, createProductDto: CreateProductDto) {
     try{
-      const redis = Red.getInstance();
       let product: any;
 
       product = {...createProductDto, user: req.user};
       product = this.repository.create(product);
 
-      const saved_product = await this.repository.save(product);
-      const redis_key = `user_id:${req.user.user_id}:product_id:${saved_product.product_id}`;
-
-      await redis.set(redis_key, JSON.stringify(saved_product)); 
-      await redis.rpush(`user_id:${req.user.user_id}:product_keys`, redis_key);
+      await this.repository.save(product);
       
       return {
         status: 'success',
@@ -121,6 +116,13 @@ export class ProductService {
           data: 'user does not have any products yet'
         }
       }
+
+      users_products.forEach( async (v) => {
+        const product_key = `user_id:${id}:product_keys:${v.product_id}`;
+
+        await redis.set(product_key, JSON.stringify(v));
+        await redis.rpush(`user_id:${id}:product_keys`, product_key);
+      })
 
       return {
           status: 'success',
