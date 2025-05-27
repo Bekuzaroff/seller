@@ -27,7 +27,7 @@ export class ProductService {
       product = this.repository.create(product);
 
       await this.repository.save(product);
-      
+
       return {
         status: 'success',
         data: 'product created successfully'
@@ -51,9 +51,14 @@ export class ProductService {
 
       if(keys.length > 0){
         const values = await redis.mget(...keys);
+        console.log(keys)
+        console.log(values)
         products = values.map(v => JSON.parse(v!));
-
-        return products;
+        console.log('from redis')
+        return {
+          status: 'success',
+          data: products
+        };
       }
       // --------------
 
@@ -103,7 +108,10 @@ export class ProductService {
         const values = await redis.mget(...keys);
         users_products = values.map(v => JSON.parse(v!));
         
-        return users_products;
+        return {
+          status: 'success',
+          data: users_products
+        };
       }
 
       users_products = await this.repository.find({
@@ -148,6 +156,11 @@ export class ProductService {
 
         const value = await redis.get(key);
         product = JSON.parse(value!);
+
+        return {
+          status: 'success',
+          data: product
+        }
       }
 
       product = await this.repository.findOne({ relations: ['user'], 
@@ -188,6 +201,36 @@ export class ProductService {
       
       await this.repository.update({product_id: id}, updateProductDto)
 
+      const redis = Red.getInstance();
+      const keys = await redis.lrange('all_product_keys', 0, -1);
+      const users_products_keys = await redis.lrange(`user_id:${req.user.user_id}:product_keys`, 0, -1);
+      
+      if(keys.length > 0){
+        if(users_products_keys.length > 0){
+          Promise.all([
+          new Promise((res, rej) => {
+            try{
+              redis.del(...keys)
+              redis.del('all_product_keys');
+            }catch(err){
+              rej(err)
+            }
+          }),
+          new Promise((res, rej) => {
+            try{
+              redis.del(...users_products_keys);
+              redis.del(`user_id:${req.user.user_id}:product_keys`);
+            }catch(err){
+              rej(err)
+            }
+          })
+        ])
+        }else{
+          await redis.del(...keys);
+          await redis.del('all_product_keys')
+        }
+      }
+
       return {
         status: 'success',
         data: 'updated successfully'
@@ -214,6 +257,36 @@ export class ProductService {
 
       if(product.user.user_id !== req.user.user_id){
         throw new HttpException('can only delete your products', 400);
+      }
+
+      const redis = Red.getInstance();
+      const keys = await redis.lrange('all_product_keys', 0, -1);
+      const users_products_keys = await redis.lrange(`user_id:${req.user.user_id}:product_keys`, 0, -1);
+      
+      if(keys.length > 0){
+        if(users_products_keys.length > 0){
+          Promise.all([
+          new Promise((res, rej) => {
+            try{
+              redis.del(...keys)
+              redis.del('all_product_keys');
+            }catch(err){
+              rej(err)
+            }
+          }),
+          new Promise((res, rej) => {
+            try{
+              redis.del(...users_products_keys);
+              redis.del(`user_id:${req.user.user_id}:product_keys`);
+            }catch(err){
+              rej(err)
+            }
+          })
+        ])
+        }else{
+          await redis.del(...keys);
+          await redis.del('all_product_keys')
+        }
       }
 
       await this.repository.delete({product_id: id});
