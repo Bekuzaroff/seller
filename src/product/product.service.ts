@@ -28,6 +28,36 @@ export class ProductService {
 
       await this.repository.save(product);
 
+      const redis = Red.getInstance();
+      const keys = await redis.lrange('all_product_keys', 0, -1);
+      const users_products_keys = await redis.lrange(`user_id:${req.user.user_id}:product_keys`, 0, -1);
+      
+      if(keys.length > 0){
+        if(users_products_keys.length > 0){
+          Promise.all([
+          new Promise((res, rej) => {
+            try{
+              redis.del(...keys)
+              redis.del('all_product_keys');
+            }catch(err){
+              rej(err)
+            }
+          }),
+          new Promise((res, rej) => {
+            try{
+              redis.del(...users_products_keys);
+              redis.del(`user_id:${req.user.user_id}:product_keys`);
+            }catch(err){
+              rej(err)
+            }
+          })
+        ])
+        }else{
+          await redis.del(...keys);
+          await redis.del('all_product_keys')
+        }
+      }
+
       return {
         status: 'success',
         data: 'product created successfully'
@@ -51,10 +81,7 @@ export class ProductService {
 
       if(keys.length > 0){
         const values = await redis.mget(...keys);
-        console.log(keys)
-        console.log(values)
         products = values.map(v => JSON.parse(v!));
-        console.log('from redis')
         return {
           status: 'success',
           data: products
