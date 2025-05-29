@@ -5,7 +5,9 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/auth/entities/user.entity';
-import Red from '../redis/red';
+import RedisSingleton from '../redis/redis_singleton';
+import { RedisService } from './redis.service';
+import Redis from 'ioredis';
 
 @Injectable()
 export class ProductService {
@@ -14,7 +16,9 @@ export class ProductService {
     @InjectRepository(Product)
     private readonly repository: Repository<Product>,
     @InjectRepository(UserEntity)
-    private readonly user_repository: Repository<UserEntity>){
+    private readonly user_repository: Repository<UserEntity>,
+
+    private readonly redisService: RedisService){
       
     }
   
@@ -28,34 +32,12 @@ export class ProductService {
 
       await this.repository.save(product);
 
-      const redis = Red.getInstance();
-      const keys = await redis.lrange('all_product_keys', 0, -1);
-      const users_products_keys = await redis.lrange(`user_id:${req.user.user_id}:product_keys`, 0, -1);
+      
+
+      const keys = await this.redisService.getKeysArray('all_product_keys', 0, -1);
       
       if(keys.length > 0){
-        if(users_products_keys.length > 0){
-          Promise.all([
-          new Promise((res, rej) => {
-            try{
-              redis.del(...keys)
-              redis.del('all_product_keys');
-            }catch(err){
-              rej(err)
-            }
-          }),
-          new Promise((res, rej) => {
-            try{
-              redis.del(...users_products_keys);
-              redis.del(`user_id:${req.user.user_id}:product_keys`);
-            }catch(err){
-              rej(err)
-            }
-          })
-        ])
-        }else{
-          await redis.del(...keys);
-          await redis.del('all_product_keys')
-        }
+        this.redisService.deleteCache(keys, 'all_product_keys');
       }
 
       return {
@@ -73,14 +55,15 @@ export class ProductService {
       // file with singleton pattern so the instance will be only one
 
       // caching logic ------
-      const redis = Red.getInstance();
+      
 
       let products: Product[];
 
-      const keys = await redis.lrange('all_product_keys', 0, -1);
+      const keys = await this.redisService.getKeysArray('all_product_keys', 0, -1);
 
       if(keys.length > 0){
-        const values = await redis.mget(...keys);
+        const values = await this.redisService.getObjectsByKeys(...keys);
+
         products = values.map(v => JSON.parse(v!));
         return {
           status: 'success',
@@ -111,8 +94,7 @@ export class ProductService {
       products.forEach( async(v) => {
         const product_key = `all_product_keys:${v.product_id}`;
 
-        await redis.set(product_key, JSON.stringify(v));
-        await redis.rpush('all_product_keys', product_key);
+        this.redisService.addObjectsAndKeys(product_key, JSON.stringify(v), 'all_product_keys');
       })
       
 
@@ -126,20 +108,7 @@ export class ProductService {
   }
     async findProductsByUser(id: number){
     try{
-      const redis = Red.getInstance();
       let users_products: Product[];
-
-      const keys = await redis.lrange(`user_id:${id}:product_keys`, 0, -1);
-
-      if(keys.length > 0){
-        const values = await redis.mget(...keys);
-        users_products = values.map(v => JSON.parse(v!));
-        
-        return {
-          status: 'success',
-          data: users_products
-        };
-      }
 
       users_products = await this.repository.find({
         where: {user: {user_id: id}}
@@ -152,13 +121,6 @@ export class ProductService {
         }
       }
 
-      users_products.forEach( async (v) => {
-        const product_key = `user_id:${id}:product_keys:${v.product_id}`;
-
-        await redis.set(product_key, JSON.stringify(v));
-        await redis.rpush(`user_id:${id}:product_keys`, product_key);
-      })
-
       return {
           status: 'success',
           data: users_products
@@ -170,10 +132,10 @@ export class ProductService {
 
     async findOne(id: number) {
     try{
-      const redis = Red.getInstance();
+      
       let product: Product | null
 
-      const keys = await redis.lrange('all_product_keys', 0, -1);
+      const keys = await this.redisService.getKeysArray('all_product_keys', 0, -1);
 
       if(keys.length > 0){
         const key = keys.find(v => v === `all_product_keys:${id}`);
@@ -181,8 +143,8 @@ export class ProductService {
           throw new HttpException('no such product', 404);
         }
 
-        const value = await redis.get(key);
-        product = JSON.parse(value!);
+        const value = await this.redisService.getObjectsByKeys(key);
+        product = JSON.parse(value[0]!);
 
         return {
           status: 'success',
@@ -228,34 +190,11 @@ export class ProductService {
       
       await this.repository.update({product_id: id}, updateProductDto)
 
-      const redis = Red.getInstance();
-      const keys = await redis.lrange('all_product_keys', 0, -1);
-      const users_products_keys = await redis.lrange(`user_id:${req.user.user_id}:product_keys`, 0, -1);
+      
+      const keys = await this.redisService.getKeysArray('all_product_keys', 0, -1);
       
       if(keys.length > 0){
-        if(users_products_keys.length > 0){
-          Promise.all([
-          new Promise((res, rej) => {
-            try{
-              redis.del(...keys)
-              redis.del('all_product_keys');
-            }catch(err){
-              rej(err)
-            }
-          }),
-          new Promise((res, rej) => {
-            try{
-              redis.del(...users_products_keys);
-              redis.del(`user_id:${req.user.user_id}:product_keys`);
-            }catch(err){
-              rej(err)
-            }
-          })
-        ])
-        }else{
-          await redis.del(...keys);
-          await redis.del('all_product_keys')
-        }
+        this.redisService.deleteCache(keys, 'all_product_keys');
       }
 
       return {
@@ -286,34 +225,11 @@ export class ProductService {
         throw new HttpException('can only delete your products', 400);
       }
 
-      const redis = Red.getInstance();
-      const keys = await redis.lrange('all_product_keys', 0, -1);
-      const users_products_keys = await redis.lrange(`user_id:${req.user.user_id}:product_keys`, 0, -1);
+      
+      const keys = await this.redisService.getKeysArray('all_product_keys', 0, -1);
       
       if(keys.length > 0){
-        if(users_products_keys.length > 0){
-          Promise.all([
-          new Promise((res, rej) => {
-            try{
-              redis.del(...keys)
-              redis.del('all_product_keys');
-            }catch(err){
-              rej(err)
-            }
-          }),
-          new Promise((res, rej) => {
-            try{
-              redis.del(...users_products_keys);
-              redis.del(`user_id:${req.user.user_id}:product_keys`);
-            }catch(err){
-              rej(err)
-            }
-          })
-        ])
-        }else{
-          await redis.del(...keys);
-          await redis.del('all_product_keys')
-        }
+        this.redisService.deleteCache(keys, 'all_product_keys');
       }
 
       await this.repository.delete({product_id: id});
