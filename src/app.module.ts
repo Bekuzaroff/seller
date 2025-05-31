@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { ProductModule } from './product/product.module';
 import { ChatModule } from './chat/chat.module';
 import { UsersModule } from './users/users.module';
+import { CommonModule } from './common/common.module';
+import { RedisModule } from './redis/redis.module';
 
 
 @Module({
@@ -25,7 +27,7 @@ import { UsersModule } from './users/users.module';
       synchronize: true,
       autoLoadEntities: true
     })
-  }), ProductModule, ChatModule, UsersModule],
+  }), ProductModule, ChatModule, UsersModule, CommonModule, RedisModule],
   controllers: [AppController],
   providers: [AppService],
 })

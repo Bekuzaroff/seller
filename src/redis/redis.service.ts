@@ -1,13 +1,9 @@
-import { Injectable } from "@nestjs/common";
-import Redis from "ioredis"
-import RedisSingleton from "src/redis/redis_singleton"
+import { Injectable } from '@nestjs/common';
+import RedisSingleton from './instance/redis_singleton';
+import Redis from 'ioredis';
 
 @Injectable()
-export class RedisService{
-    constructor() {
-        
-    }
-
+export class RedisService {
     static redis: Redis = RedisSingleton.getInstance()
 
     deleteCache(keys: string[], keys_range: string){

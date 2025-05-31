@@ -5,9 +5,7 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/auth/entities/user.entity';
-import RedisSingleton from '../redis/redis_singleton';
-import { RedisService } from './redis.service';
-import Redis from 'ioredis';
+import { RedisService } from '.././redis/redis.service';
 
 @Injectable()
 export class ProductService {

@@ -1,7 +1,6 @@
-import { CanActivate, ExecutionContext, HttpException, Inject, Injectable } from "@nestjs/common";
-import { AuthService } from "../auth.service";
+import { CanActivate, ExecutionContext, HttpException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { UserEntity } from "../entities/user.entity";
+import { UserEntity } from "../../auth/entities/user.entity";
 import { Repository } from "typeorm";
 import { UsersService } from "src/users/users.service";
 
