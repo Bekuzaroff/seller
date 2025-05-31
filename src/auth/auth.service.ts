@@ -4,58 +4,30 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from "bcrypt";
-import * as jwt from "jsonwebtoken";
 import { ConfigService } from '@nestjs/config';
-import ms from 'ms';
 import { Request, Response } from 'express';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import * as nodemailer from 'nodemailer';
 import { ResetPasswordDto } from './dtos/reset-pass.dto';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(UserEntity)
         private readonly repository: Repository<UserEntity>,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly userService: UsersService
     ){}
-
-    verify_token(token: string){
-        try{
-            const payload = jwt.verify(token, this.configService.get<string>('JWT_SECRET_STR') ?? '');
-            return payload;
-        }catch(e){
-            if(e.name === 'TokenExpiredError'){
-                throw new HttpException('token expired', 403);
-            }else{
-                throw new HttpException('wrong token', 400);
-            }
-        }
-    }
-
-    async sign_jwt(id: number, exp_time: ms.StringValue){
-        return jwt.sign({sub: id}, this.configService.get<string>('JWT_SECRET_STR') ?? '', {
-            expiresIn: exp_time
-        })
-    }
-
-    private async comparePasswordsLogin(req_password: string, db_hashed_password: string){
-        return await bcrypt.compare(req_password, db_hashed_password);
-    }
-
-    async hash_password(info, salt_rounds){
-        return await bcrypt.hash(info, salt_rounds);
-    }
 
     async sign_up(user: CreateUserDto, res: Response){
         try{
             const new_user = this.repository.create(user);
             
-            new_user.password = await this.hash_password(new_user.password, 10)
+            new_user.password = await this.userService.hash_password(new_user.password, 10)
 
-            const access_token = await this.sign_jwt(new_user.user_id, "15m");
-            const refresh_token = await this.sign_jwt(new_user.user_id, "15d");
+            const access_token = await this.userService.sign_jwt(new_user.user_id, "15m");
+            const refresh_token = await this.userService.sign_jwt(new_user.user_id, "15d");
 
             new_user.refresh_token = refresh_token;
 
@@ -101,12 +73,12 @@ export class AuthService {
                 throw new NotFoundException('user with such email does not exist');
             }
 
-            if(!(await this.comparePasswordsLogin(user.password!, existing_user.password))){
+            if(!(await this.userService.comparePasswordsLogin(user.password!, existing_user.password))){
                 throw new BadRequestException('wrong password');
             }
 
-            const access_token = await this.sign_jwt(existing_user.user_id, "15m");
-            const refresh_token = await this.sign_jwt(existing_user.user_id, "15d");
+            const access_token = await this.userService.sign_jwt(existing_user.user_id, "15m");
+            const refresh_token = await this.userService.sign_jwt(existing_user.user_id, "15d");
 
             existing_user.refresh_token = refresh_token;
             await this.repository.save(existing_user);
@@ -159,7 +131,7 @@ export class AuthService {
         }
         
         let payload: any;
-        payload = this.verify_token(refresh_token_cookie);
+        payload = this.userService.verify_token(refresh_token_cookie);
 
         const existing_user = await this.repository.findOne({
             where: {user_id: payload.sub}
@@ -173,8 +145,8 @@ export class AuthService {
             throw new HttpException('refresh token mismatch', 403);
         }
         
-        const access_token = await this.sign_jwt(existing_user.user_id, "15m");
-        const refresh_token = await this.sign_jwt(existing_user.user_id, "15d");
+        const access_token = await this.userService.sign_jwt(existing_user.user_id, "15m");
+        const refresh_token = await this.userService.sign_jwt(existing_user.user_id, "15d");
 
         existing_user.refresh_token = refresh_token;
         await this.repository.save(existing_user);
@@ -204,7 +176,7 @@ export class AuthService {
         if(!user){
             throw new HttpException('user with such email does not exist', 404);
         }
-        const token = await this.sign_jwt(user.user_id, "5m");
+        const token = await this.userService.sign_jwt(user.user_id, "5m");
         const reset_link = `${this.configService.get<string>('CLIENT_URL')}/api/v1/auth/password/reset?token=${token}`;
 
         const transporter = nodemailer.createTransport({
@@ -235,10 +207,10 @@ export class AuthService {
 
     async reset_password(token: string, resetPasswordDto: ResetPasswordDto){
         try{
-            const new_password_hashed = await this.hash_password(resetPasswordDto.new_password, 10);
+            const new_password_hashed = await this.userService.hash_password(resetPasswordDto.new_password, 10);
 
         let decoded_token: any
-        decoded_token = this.verify_token(token);
+        decoded_token = this.userService.verify_token(token);
 
         const user = await this.repository.findOne({
             where: {
@@ -265,11 +237,11 @@ export class AuthService {
     async change_password(req: any, updateUserDto: UpdateUserDto){
         const user = req.user;
         
-        if(!(await this.comparePasswordsLogin(updateUserDto.old_password, user.password))){
+        if(!(await this.userService.comparePasswordsLogin(updateUserDto.old_password, user.password))){
             throw new HttpException('wrong old password', 400);
         }
 
-        user.password = await this.hash_password(updateUserDto.password, 10);
+        user.password = await this.userService.hash_password(updateUserDto.password, 10);
 
         await this.repository.save(user);
 

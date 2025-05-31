@@ -3,10 +3,11 @@ import { AuthService } from "../auth.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { UserEntity } from "../entities/user.entity";
 import { Repository } from "typeorm";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate{
-    constructor(private readonly service: AuthService,
+    constructor(private readonly service: UsersService,
         @InjectRepository(UserEntity)
         readonly repository: Repository<UserEntity>
     ){}

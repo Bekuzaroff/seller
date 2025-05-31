@@ -6,6 +6,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { ProductModule } from './product/product.module';
 import { ChatModule } from './chat/chat.module';
+import { UsersModule } from './users/users.module';
 
 
 @Module({
@@ -24,7 +25,7 @@ import { ChatModule } from './chat/chat.module';
       synchronize: true,
       autoLoadEntities: true
     })
-  }), ProductModule, ChatModule],
+  }), ProductModule, ChatModule, UsersModule],
   controllers: [AppController],
   providers: [AppService],
 })
