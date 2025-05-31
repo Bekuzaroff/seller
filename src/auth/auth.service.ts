@@ -205,7 +205,7 @@ export class AuthService {
             throw new HttpException('user with such email does not exist', 404);
         }
         const token = await this.sign_jwt(user.user_id, "5m");
-        const reset_link = `${this.configService.get<string>('CLIENT_URL')}/api/v1/user/reset_password?token=${token}`;
+        const reset_link = `${this.configService.get<string>('CLIENT_URL')}/api/v1/auth/password/reset?token=${token}`;
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
