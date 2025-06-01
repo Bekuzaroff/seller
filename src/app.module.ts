@@ -9,6 +9,7 @@ import { ChatModule } from './chat/chat.module';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { RedisModule } from './redis/redis.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [AuthModule, ConfigModule.forRoot({
@@ -26,7 +27,7 @@ import { RedisModule } from './redis/redis.module';
       synchronize: true,
       autoLoadEntities: true
     })
-  }), ProductModule, ChatModule, UsersModule, CommonModule, RedisModule],
+  }), ProductModule, ChatModule, UsersModule, CommonModule, RedisModule, CategoriesModule],
   controllers: [AppController],
   providers: [AppService],
 })
