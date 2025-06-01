@@ -1,14 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { AdminCheckGuard } from 'src/common/guards/admin-check.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
-@Controller('/api/v1/admin/categories')
+@Controller('/api/v1/categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
+  @HttpCode(201)
   @UseGuards(AdminCheckGuard)
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -16,6 +17,7 @@ export class CategoriesController {
     return this.categoriesService.create(createCategoryDto);
   }
 
+  @HttpCode(200)
   @Get()
   findAll() {
     return this.categoriesService.findAll();

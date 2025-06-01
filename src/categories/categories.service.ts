@@ -26,8 +26,17 @@ export class CategoriesService {
     }
   }
 
-  findAll() {
-    return `This action returns all categories`;
+  async findAll() {
+    try{
+     const categories = await this.repository.find();
+     
+     return {
+      status: 'success',
+      data: categories
+     }
+    }catch(err){
+      throw err;
+    }
   }
 
   findOne(id: number) {
