@@ -36,6 +36,11 @@ export class ProductService {
         if(q.end_price) {
         products = products.filter(v => v.price <= q.end_price);
       }
+      if(q.page){
+        const limit = 5;
+        const start = (q.page - 1) * limit;
+        products = products.slice(start, start + limit);
+      }
 
       return products;
     }
@@ -49,8 +54,6 @@ export class ProductService {
       product = this.repository.create(product);
 
       await this.repository.save(product);
-
-      
 
       const keys = await this.redisService.getKeysArray('all_product_keys', 0, -1);
       
@@ -69,9 +72,6 @@ export class ProductService {
 
     async findAll(q: any) {
     try{
-      // we create instance in another 
-      // file with singleton pattern so the instance will be only one
-
       // caching logic ------
       
 
