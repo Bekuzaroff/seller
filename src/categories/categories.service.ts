@@ -4,6 +4,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
+  constructor(){}
   create(createCategoryDto: CreateCategoryDto) {
     return 'This action adds a new category';
   }
