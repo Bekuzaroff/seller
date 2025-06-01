@@ -39,4 +39,10 @@ export class UserEntity{
     @ManyToMany(() => Product, (product) => product.users_liked)
     @JoinTable({name: "liked_products"})
     liked_products: Product[]
+
+    @Column({
+        type: 'varchar',
+        length: 10
+    })
+    role: "User" | "Admin"
 }

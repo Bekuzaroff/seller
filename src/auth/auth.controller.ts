@@ -1,4 +1,4 @@
-import {Body, Controller, HttpCode, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import {Body, Controller, HttpCode, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dtos/login-user.dto';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -13,8 +13,8 @@ export class AuthController {
 
     @HttpCode(201)
     @Post('user/new')
-    sign_up(@Body() user: CreateUserDto, @Res() res: Response){
-        return this.service.sign_up(user, res);
+    sign_up(@Body() user: CreateUserDto, @Res() res: Response, @Query("admin_id") admin_id ?: string){
+        return this.service.sign_up(user, res, admin_id);
     }
 
     @HttpCode(200)
