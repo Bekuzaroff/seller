@@ -52,7 +52,16 @@ export class CategoriesService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  async remove(id: number) {
+    try{
+      await this.repository.delete({category_id: id});
+
+      return {
+        status: 'success',
+        data: 'deleted successfully'
+      }
+    }catch(err){
+      throw err;
+    }
   }
 }
