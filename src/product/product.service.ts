@@ -19,6 +19,26 @@ export class ProductService {
     private readonly redisService: RedisService){
       
     }
+
+    private filter_product(q: any, products: Product[]): Product[]{
+      if(q.name) {
+        products = products.filter(v => v.name.includes(q.name));
+      }
+        if(q.description) {
+        products = products.filter(v => v.description.includes(q.description));
+      }
+        if(q.is_new) {
+        products = products.filter(v => v.is_new === q.is_new);
+      }
+        if(q.start_price) {
+        products = products.filter(v => v.price >= q.start_price);
+      }
+        if(q.end_price) {
+        products = products.filter(v => v.price <= q.end_price);
+      }
+
+      return products;
+    }
   
 
     async create(req: any, createProductDto: CreateProductDto) {
@@ -63,6 +83,8 @@ export class ProductService {
         const values = await this.redisService.getObjectsByKeys(...keys);
 
         products = values.map(v => JSON.parse(v!));
+        products = this.filter_product(q, products);
+        
         return {
           status: 'success',
           data: products
@@ -73,21 +95,7 @@ export class ProductService {
       //db logic ------
       products = await this.repository.find({relations: ['user'], order: {created_at: 'DESC'}});
 
-      if(q.name){
-        products = products.filter(v => v.name.includes(q.name));
-      }
-      if(q.description){
-        products = products.filter(v => v.description.includes(q.description));
-      }
-      if(q.is_new){
-        products = products.filter(v => v.is_new === q.is_new);
-      }
-      if(q.start_price){
-        products = products.filter(v => v.price >= q.start_price);
-      }
-      if(q.end_price){
-        products = products.filter(v => v.price <= q.end_price);
-      }
+      products = this.filter_product(q, products);
 
       products.forEach( async(v) => {
         const product_key = `all_product_keys:${v.product_id}`;
