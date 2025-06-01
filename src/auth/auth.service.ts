@@ -20,9 +20,11 @@ export class AuthService {
         private readonly userService: UsersService
     ){}
 
-    async sign_up(user: CreateUserDto, res: Response){
+    async sign_up(user: CreateUserDto, res: Response, admin_id ?: string){
         try{
-            const new_user = this.repository.create(user);
+            // initially user's role is "User" but then we will check admin id 
+            // and if it is correct we pass "Admin" to the role field
+            const new_user = this.repository.create({...user, role: 'User'});
             
             new_user.password = await this.userService.hash_password(new_user.password, 10)
 
@@ -31,6 +33,15 @@ export class AuthService {
 
             new_user.refresh_token = refresh_token;
 
+           if(admin_id){
+             const id_correct = admin_id === this.configService.get<string>("ADMIN_ID");
+             if(id_correct){
+                new_user.role = "Admin";
+             }else{
+                throw new HttpException("admin id is wrong", 400);
+             }
+           }
+            
             await this.repository.save(new_user);
 
             res.cookie('refresh_token', refresh_token, {
