@@ -19,4 +19,8 @@ export class CreateProductDto {
     @IsOptional()
     is_new: boolean
 
+    @IsString({message: 'category should be a string'})
+    @IsOptional()
+    category: string
+
 }

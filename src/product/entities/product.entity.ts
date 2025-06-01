@@ -36,6 +36,12 @@ export class Product {
     })
     is_new: boolean
 
+    @Column({
+        type: 'varchar',
+        length: 100
+    })
+    category: string
+
     @ManyToOne(() => UserEntity, (user) => user.products)
     @JoinColumn({name: 'user_id'})
     user: UserEntity
