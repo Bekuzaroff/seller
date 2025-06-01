@@ -10,7 +10,6 @@ import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { RedisModule } from './redis/redis.module';
 
-
 @Module({
   imports: [AuthModule, ConfigModule.forRoot({
     isGlobal: true

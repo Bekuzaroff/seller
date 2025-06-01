@@ -73,8 +73,6 @@ export class ProductService {
     async findAll(q: any) {
     try{
       // caching logic ------
-      
-
       let products: Product[];
 
       const keys = await this.redisService.getKeysArray('all_product_keys', 0, -1);
