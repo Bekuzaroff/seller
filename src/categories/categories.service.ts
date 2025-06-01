@@ -39,12 +39,17 @@ export class CategoriesService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} category`;
-  }
+  async update(id: number, updateCategoryDto: UpdateCategoryDto) {
+    try{
+      await this.repository.update({category_id: id}, updateCategoryDto);
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return `This action updates a #${id} category`;
+      return {
+        status: 'success',
+        data: 'updated successfully'
+      }
+    }catch(err){
+      throw err;
+    }
   }
 
   remove(id: number) {

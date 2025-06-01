@@ -5,7 +5,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { AdminCheckGuard } from 'src/common/guards/admin-check.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
-@Controller('/api/v1/categories')
+@Controller('/api/v1/categories/')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
@@ -21,11 +21,6 @@ export class CategoriesController {
   @Get()
   findAll() {
     return this.categoriesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.categoriesService.findOne(+id);
   }
 
   @Patch(':id')
